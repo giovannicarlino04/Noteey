@@ -1,0 +1,174 @@
+/* Stili generali */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+/* Animazioni */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Transizioni */
+.fade-enter {
+  opacity: 0;
+}
+
+.fade-enter-active {
+  opacity: 1;
+  transition: opacity 200ms ease-in;
+}
+
+.fade-exit {
+  opacity: 1;
+}
+
+.fade-exit-active {
+  opacity: 0;
+  transition: opacity 200ms ease-in;
+}
+
+/* Scrollbar personalizzata */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Stili per il tema scuro */
+.dark-theme {
+  background-color: #121212;
+  color: #ffffff;
+}
+
+.dark-theme ::-webkit-scrollbar-thumb {
+  background: #666;
+}
+
+.dark-theme ::-webkit-scrollbar-thumb:hover {
+  background: #888;
+}
+
+/* Stili per il tema chiaro */
+.light-theme {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+/* Stili per i componenti Material-UI */
+.MuiPaper-root {
+  transition: background-color 0.3s ease;
+}
+
+.MuiTextField-root {
+  transition: all 0.3s ease;
+}
+
+.MuiButton-root {
+  transition: all 0.3s ease;
+}
+
+/* Stili per l'editor di note */
+.note-editor {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.note-editor .MuiTextField-root {
+  margin-bottom: 1rem;
+}
+
+/* Stili per la lista delle note */
+.note-list {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.note-list-item {
+  transition: background-color 0.2s ease;
+}
+
+.note-list-item:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* Stili per i tag */
+.tag-chip {
+  margin: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+.tag-chip:hover {
+  transform: scale(1.05);
+}
+
+/* Stili per gli allegati */
+.attachment-chip {
+  margin: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.attachment-chip:hover {
+  transform: scale(1.05);
+}
+
+/* Stili per la barra laterale */
+.sidebar {
+  transition: width 0.3s ease;
+}
+
+/* Stili per il caricamento */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+/* Stili per i messaggi di errore */
+.error-message {
+  color: #f44336;
+  margin: 0.5rem 0;
+}
+
+/* Stili per i messaggi di successo */
+.success-message {
+  color: #4caf50;
+  margin: 0.5rem 0;
+} 
