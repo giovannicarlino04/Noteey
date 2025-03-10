@@ -10,7 +10,7 @@
     "watch": "webpack --watch --mode development",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
-    "generate-icons": "electron-icon-maker --input=./assets/icon.svg --output=./assets/icons"
+    "generate-icons": "node scripts/generate-icons.js"
   },
   "author": "Your Name",
   "license": "MIT",
@@ -36,7 +36,9 @@
     "css-loader": "^6.8.1",
     "electron": "^27.1.0",
     "electron-builder": "^24.6.4",
+    "electron-icon-builder": "^2.0.1",
     "electron-icon-maker": "^0.0.5",
+    "sharp": "^0.33.5",
     "style-loader": "^3.3.3",
     "terser-webpack-plugin": "^5.3.14",
     "webpack": "^5.89.0",
@@ -63,21 +65,21 @@
           ]
         }
       ],
-      "icon": "assets/icon.ico",
+      "icon": "assets/icons/icon.ico",
       "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "mac": {
       "target": [
         "dmg"
       ],
-      "icon": "assets/icon.icns"
+      "icon": "assets/icons/icon.icns"
     },
     "linux": {
       "target": [
         "AppImage",
         "deb"
       ],
-      "icon": "assets/icon.png"
+      "icon": "assets/icons/icon.png"
     },
     "nsis": {
       "oneClick": false,
@@ -87,9 +89,9 @@
       "shortcutName": "Noteey",
       "deleteAppDataOnUninstall": true,
       "perMachine": false,
-      "installerIcon": "assets/icon.ico",
-      "uninstallerIcon": "assets/icon.ico",
-      "installerHeaderIcon": "assets/icon.ico"
+      "installerIcon": "assets/icons/icon.ico",
+      "uninstallerIcon": "assets/icons/icon.ico",
+      "installerHeaderIcon": "assets/icons/icon.ico"
     },
     "asar": true,
     "compression": "maximum",
