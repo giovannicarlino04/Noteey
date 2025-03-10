@@ -20,7 +20,7 @@ Noteey è un'applicazione moderna per la gestione delle note personali, costruit
 
 ## Installazione
 
-1. Scarica l'ultima versione dal [releases page](https://github.com/giovannicarlino04/noteey/releases)
+1. Scarica l'ultima versione dal [releases page](https://github.com/yourusername/noteey/releases)
 2. Esegui il file di installazione
 3. Segui le istruzioni dell'installer
 

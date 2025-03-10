@@ -66,17 +66,148 @@ app.on('activate', () => {
   }
 });
 
-// Utility functions for password hashing
-function hashPassword(password) {
-  const salt = crypto.randomBytes(16).toString('hex');
-  const hash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
-  return { salt, hash };
+// Funzioni di utilità per la crittografia
+function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
+  return new Promise((resolve, reject) => {
+    crypto.pbkdf2(password, salt, 100000, 64, 'sha512', (err, derivedKey) => {
+      if (err) reject(err);
+      resolve({
+        hash: derivedKey.toString('hex'),
+        salt
+      });
+    });
+  });
 }
 
-function verifyPassword(password, salt, hash) {
-  const verifyHash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
-  return hash === verifyHash;
+function verifyPassword(password, hash, salt) {
+  return new Promise((resolve, reject) => {
+    crypto.pbkdf2(password, salt, 100000, 64, 'sha512', (err, derivedKey) => {
+      if (err) reject(err);
+      resolve(derivedKey.toString('hex') === hash);
+    });
+  });
 }
+
+// Gestione utenti
+ipcMain.handle('register', async (event, { username, password }) => {
+  try {
+    const users = store.get('users', []);
+    if (users.some(user => user.username === username)) {
+      throw new Error('Username già in uso');
+    }
+
+    const { hash, salt } = await hashPassword(password);
+    const newUser = {
+      id: crypto.randomBytes(16).toString('hex'),
+      username,
+      passwordHash: hash,
+      salt,
+      createdAt: new Date().toISOString()
+    };
+
+    users.push(newUser);
+    store.set('users', users);
+    return { success: true, user: { id: newUser.id, username: newUser.username } };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('login', async (event, { username, password }) => {
+  try {
+    const users = store.get('users', []);
+    const user = users.find(u => u.username === username);
+    
+    if (!user) {
+      throw new Error('Utente non trovato');
+    }
+
+    const isValid = await verifyPassword(password, user.passwordHash, user.salt);
+    if (!isValid) {
+      throw new Error('Password non valida');
+    }
+
+    return { success: true, user: { id: user.id, username: user.username } };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('get-user', async () => {
+  try {
+    const currentUser = store.get('currentUser');
+    if (!currentUser) return null;
+
+    const users = store.get('users', []);
+    const user = users.find(u => u.id === currentUser.id);
+    return user ? { id: user.id, username: user.username } : null;
+  } catch (error) {
+    console.error('Errore nel recupero dell\'utente:', error);
+    return null;
+  }
+});
+
+ipcMain.handle('set-user', async (event, user) => {
+  try {
+    store.set('currentUser', user);
+    return true;
+  } catch (error) {
+    console.error('Errore nel salvataggio dell\'utente:', error);
+    return false;
+  }
+});
+
+ipcMain.handle('logout', async () => {
+  try {
+    store.delete('currentUser');
+    return true;
+  } catch (error) {
+    console.error('Errore nel logout:', error);
+    return false;
+  }
+});
+
+// Gestione note
+ipcMain.handle('get-notes', async (event, userId) => {
+  try {
+    const notes = store.get('notes', []);
+    return notes.filter(note => note.userId === userId);
+  } catch (error) {
+    console.error('Errore nel recupero delle note:', error);
+    return [];
+  }
+});
+
+ipcMain.handle('save-note', async (event, note) => {
+  try {
+    const notes = store.get('notes', []);
+    const index = notes.findIndex(n => n.id === note.id);
+    
+    if (index === -1) {
+      notes.push(note);
+    } else {
+      notes[index] = note;
+    }
+    
+    store.set('notes', notes);
+    return { success: true, note };
+  } catch (error) {
+    console.error('Errore nel salvataggio della nota:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('delete-note', async (event, noteId) => {
+  try {
+    const notes = store.get('notes', []);
+    const filteredNotes = notes.filter(note => note.id !== noteId);
+    store.set('notes', filteredNotes);
+    return { success: true };
+  } catch (error) {
+    console.error('Errore nell\'eliminazione della nota:', error);
+    return { success: false, error: error.message };
+  }
+});
 
 // Theme handling
 ipcMain.on('toggle-theme', (event, theme) => {
@@ -86,102 +217,6 @@ ipcMain.on('toggle-theme', (event, theme) => {
 
 ipcMain.on('get-theme', (event) => {
   event.returnValue = store.get('theme', 'light');
-});
-
-// User authentication handling
-ipcMain.handle('register', (event, { email, password }) => {
-  try {
-    const users = store.get('users', {});
-    
-    if (users[email]) {
-      throw new Error('User already exists');
-    }
-
-    const { salt, hash } = hashPassword(password);
-    users[email] = {
-      email,
-      salt,
-      hash,
-      name: email.split('@')[0],
-      createdAt: new Date().toISOString()
-    };
-
-    store.set('users', users);
-    return { email, name: users[email].name };
-  } catch (error) {
-    throw new Error(error.message);
-  }
-});
-
-ipcMain.handle('login', (event, { email, password }) => {
-  try {
-    const users = store.get('users', {});
-    const user = users[email];
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    if (!verifyPassword(password, user.salt, user.hash)) {
-      throw new Error('Invalid password');
-    }
-
-    return { email, name: user.name };
-  } catch (error) {
-    throw new Error(error.message);
-  }
-});
-
-ipcMain.handle('get-user', () => {
-  try {
-    return store.get('currentUser');
-  } catch (error) {
-    return null;
-  }
-});
-
-ipcMain.handle('set-current-user', (event, user) => {
-  try {
-    store.set('currentUser', user);
-    return true;
-  } catch (error) {
-    return false;
-  }
-});
-
-ipcMain.handle('logout', () => {
-  try {
-    store.delete('currentUser');
-    return true;
-  } catch (error) {
-    return false;
-  }
-});
-
-// Notes handling
-ipcMain.handle('get-notes', (event) => {
-  try {
-    const currentUser = store.get('currentUser');
-    if (!currentUser) {
-      throw new Error('User not authenticated');
-    }
-    return store.get(`notes_${currentUser.email}`, []);
-  } catch (error) {
-    throw new Error(error.message);
-  }
-});
-
-ipcMain.handle('save-notes', (event, notes) => {
-  try {
-    const currentUser = store.get('currentUser');
-    if (!currentUser) {
-      throw new Error('User not authenticated');
-    }
-    store.set(`notes_${currentUser.email}`, notes);
-    return true;
-  } catch (error) {
-    throw new Error(error.message);
-  }
 });
 
 // Sync status handling

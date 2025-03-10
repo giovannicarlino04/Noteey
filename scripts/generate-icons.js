@@ -1,6 +1,7 @@
 const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
+const pngToIco = require('png-to-ico');
 
 const sizes = [16, 32, 48, 64, 128, 256, 512];
 const inputFile = path.join(__dirname, '../assets/icon.svg');
@@ -23,19 +24,9 @@ async function generatePNGs() {
 
 // Genera ICO per Windows
 async function generateICO() {
-  const pngBuffers = await Promise.all(
-    sizes.map(size =>
-      sharp(path.join(outputDir, `icon-${size}.png`))
-        .toBuffer()
-    )
-  );
-
-  // Qui dovremmo convertire i PNG in ICO
-  // Per ora copiamo il PNG più grande come ICO
-  fs.copyFileSync(
-    path.join(outputDir, 'icon-256.png'),
-    path.join(outputDir, 'icon.ico')
-  );
+  const pngFiles = sizes.map(size => path.join(outputDir, `icon-${size}.png`));
+  const icoBuffer = await pngToIco(pngFiles);
+  fs.writeFileSync(path.join(outputDir, 'icon.ico'), icoBuffer);
 }
 
 // Genera ICNS per macOS

@@ -8,20 +8,29 @@ import {
   Paper,
   Chip,
   InputAdornment,
-  Typography
+  Typography,
+  Button,
+  Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   Save as SaveIcon,
   Delete as DeleteIcon,
   Tag as TagIcon,
-  AttachFile as AttachFileIcon
+  AttachFile as AttachFileIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 import { noteService } from '../services/noteService';
 import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from '../contexts/AuthContext';
 
 function NoteEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [note, setNote] = useState({
     id: id === 'new' ? uuidv4() : '',
     title: '',
@@ -33,6 +42,7 @@ function NoteEditor() {
   });
   const [newTag, setNewTag] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
 
   useEffect(() => {
     if (id && id !== 'new') {
@@ -56,7 +66,8 @@ function NoteEditor() {
     try {
       const noteData = {
         ...note,
-        updatedAt: new Date()
+        userId: user.id,
+        updatedAt: new Date().toISOString()
       };
 
       await noteService.saveNote(noteData);
@@ -81,8 +92,7 @@ function NoteEditor() {
     }
   };
 
-  const handleAddTag = (e) => {
-    e.preventDefault();
+  const handleAddTag = () => {
     if (newTag && !note.tags.includes(newTag)) {
       setNote(prev => ({
         ...prev,
@@ -90,6 +100,7 @@ function NoteEditor() {
       }));
       setNewTag('');
     }
+    setIsTagDialogOpen(false);
   };
 
   const handleRemoveTag = (tagToRemove) => {
@@ -157,31 +168,28 @@ function NoteEditor() {
           sx={{ mb: 2 }}
         />
 
-        <Box sx={{ mb: 2 }}>
-          <form onSubmit={handleAddTag}>
-            <TextField
-              size="small"
-              placeholder="Aggiungi tag"
-              value={newTag}
-              onChange={(e) => setNewTag(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <TagIcon />
-                  </InputAdornment>
-                )
-              }}
-            />
-          </form>
-          <Box sx={{ mt: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <Typography variant="subtitle2" sx={{ mr: 1 }}>
+            Tag:
+          </Typography>
+          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
             {note.tags.map((tag) => (
               <Chip
                 key={tag}
                 label={tag}
                 onDelete={() => handleRemoveTag(tag)}
+                color="primary"
+                variant="outlined"
               />
             ))}
-          </Box>
+            <IconButton
+              size="small"
+              onClick={() => setIsTagDialogOpen(true)}
+              color="primary"
+            >
+              <AddIcon />
+            </IconButton>
+          </Stack>
         </Box>
 
         <Box>
@@ -211,6 +219,26 @@ function NoteEditor() {
           ))}
         </Box>
       </Paper>
+
+      <Dialog open={isTagDialogOpen} onClose={() => setIsTagDialogOpen(false)}>
+        <DialogTitle>Aggiungi Tag</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Nuovo Tag"
+            fullWidth
+            value={newTag}
+            onChange={(e) => setNewTag(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsTagDialogOpen(false)}>Annulla</Button>
+          <Button onClick={handleAddTag} color="primary">
+            Aggiungi
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
