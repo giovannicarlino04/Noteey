@@ -12,7 +12,7 @@
     "dist": "electron-builder",
     "generate-icons": "node scripts/generate-icons.js"
   },
-  "author": "Your Name",
+  "author": "Giovanni Carlino",
   "license": "MIT",
   "dependencies": {
     "@emotion/react": "^11.11.1",
