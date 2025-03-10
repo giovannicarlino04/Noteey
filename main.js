@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const Store = require('electron-store');
+const crypto = require('crypto');
 const store = new Store();
 
 // Disable hardware acceleration
@@ -15,37 +16,43 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      enableRemoteModule: true
+      enableRemoteModule: true,
+      devTools: false // Disable DevTools in production
     },
     frame: false,
-    titleBarStyle: 'hiddenInset'
-  });
-
-  // Always open DevTools
-  mainWindow.webContents.openDevTools();
-
-  // Handle errors
-  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-    console.error('Failed to load:', errorCode, errorDescription);
-  });
-
-  mainWindow.webContents.on('crashed', (event) => {
-    console.error('Window crashed:', event);
-  });
-
-  mainWindow.on('unresponsive', () => {
-    console.error('Window unresponsive');
+    titleBarStyle: 'hiddenInset',
+    icon: path.join(__dirname, 'assets', 'icon.png')
   });
 
   // Load the app
   const indexPath = path.join(__dirname, 'dist', 'index.html');
-  console.log('Loading file:', indexPath);
-  mainWindow.loadFile(indexPath).catch(err => {
-    console.error('Error loading file:', err);
+  mainWindow.loadFile(indexPath).catch(() => {
+    app.quit();
+  });
+
+  // Prevent opening DevTools with keyboard shortcuts
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.control && input.key.toLowerCase() === 'i') {
+      event.preventDefault();
+      return true;
+    }
   });
 }
 
-app.whenReady().then(createWindow);
+// Prevent multiple instances
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+
+  app.whenReady().then(createWindow);
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
@@ -59,39 +66,122 @@ app.on('activate', () => {
   }
 });
 
+// Utility functions for password hashing
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
+  return { salt, hash };
+}
+
+function verifyPassword(password, salt, hash) {
+  const verifyHash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
+  return hash === verifyHash;
+}
+
 // Theme handling
 ipcMain.on('toggle-theme', (event, theme) => {
   store.set('theme', theme);
   event.reply('theme-changed', theme);
 });
 
-// Sync theme getter
 ipcMain.on('get-theme', (event) => {
   event.returnValue = store.get('theme', 'light');
 });
 
 // User authentication handling
-ipcMain.on('save-user', (event, user) => {
-  store.set('user', user);
+ipcMain.handle('register', (event, { email, password }) => {
+  try {
+    const users = store.get('users', {});
+    
+    if (users[email]) {
+      throw new Error('User already exists');
+    }
+
+    const { salt, hash } = hashPassword(password);
+    users[email] = {
+      email,
+      salt,
+      hash,
+      name: email.split('@')[0],
+      createdAt: new Date().toISOString()
+    };
+
+    store.set('users', users);
+    return { email, name: users[email].name };
+  } catch (error) {
+    throw new Error(error.message);
+  }
 });
 
-ipcMain.on('clear-user', () => {
-  store.delete('user');
+ipcMain.handle('login', (event, { email, password }) => {
+  try {
+    const users = store.get('users', {});
+    const user = users[email];
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (!verifyPassword(password, user.salt, user.hash)) {
+      throw new Error('Invalid password');
+    }
+
+    return { email, name: user.name };
+  } catch (error) {
+    throw new Error(error.message);
+  }
 });
 
-// Sync user getter
-ipcMain.on('get-user', (event) => {
-  event.returnValue = store.get('user');
+ipcMain.handle('get-user', () => {
+  try {
+    return store.get('currentUser');
+  } catch (error) {
+    return null;
+  }
+});
+
+ipcMain.handle('set-current-user', (event, user) => {
+  try {
+    store.set('currentUser', user);
+    return true;
+  } catch (error) {
+    return false;
+  }
+});
+
+ipcMain.handle('logout', () => {
+  try {
+    store.delete('currentUser');
+    return true;
+  } catch (error) {
+    return false;
+  }
 });
 
 // Notes handling
-ipcMain.handle('get-notes', () => {
-  return store.get('notes', []);
+ipcMain.handle('get-notes', (event) => {
+  try {
+    const currentUser = store.get('currentUser');
+    if (!currentUser) {
+      throw new Error('User not authenticated');
+    }
+    return store.get(`notes_${currentUser.email}`, []);
+  } catch (error) {
+    throw new Error(error.message);
+  }
 });
 
 ipcMain.handle('save-notes', (event, notes) => {
-  store.set('notes', notes);
-  return true;
+  try {
+    const currentUser = store.get('currentUser');
+    if (!currentUser) {
+      throw new Error('User not authenticated');
+    }
+    store.set(`notes_${currentUser.email}`, notes);
+    return true;
+  } catch (error) {
+    throw new Error(error.message);
+  }
 });
 
 // Sync status handling

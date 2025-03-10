@@ -9,8 +9,12 @@ import {
   Tabs,
   Alert,
   Container,
-  useTheme
+  useTheme,
+  CircularProgress,
+  InputAdornment,
+  IconButton
 } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 
 function TabPanel(props) {
@@ -37,25 +41,57 @@ function Login() {
   const [tabValue, setTabValue] = useState(0);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, register } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+  const { login, register, error } = useAuth();
   const theme = useTheme();
+
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
+  const validatePassword = (password) => {
+    return password.length >= 8;
+  };
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
-    setError('');
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setFormErrors({});
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    const errors = {};
 
+    if (!email) {
+      errors.email = 'Email is required';
+    } else if (!validateEmail(email)) {
+      errors.email = 'Invalid email format';
+    }
+
+    if (!password) {
+      errors.password = 'Password is required';
+    } else if (!validatePassword(password)) {
+      errors.password = 'Password must be at least 8 characters';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    setLoading(true);
     try {
       await login(email, password);
     } catch (error) {
-      setError('Error during login. Please check your credentials.');
+      console.error('Login error:', error);
     } finally {
       setLoading(false);
     }
@@ -63,14 +99,37 @@ function Login() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    const errors = {};
 
+    if (!email) {
+      errors.email = 'Email is required';
+    } else if (!validateEmail(email)) {
+      errors.email = 'Invalid email format';
+    }
+
+    if (!password) {
+      errors.password = 'Password is required';
+    } else if (!validatePassword(password)) {
+      errors.password = 'Password must be at least 8 characters';
+    }
+
+    if (!confirmPassword) {
+      errors.confirmPassword = 'Please confirm your password';
+    } else if (password !== confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    setLoading(true);
     try {
       await register(email, password);
       setTabValue(0);
     } catch (error) {
-      setError('Error during registration. Please try another email.');
+      console.error('Registration error:', error);
     } finally {
       setLoading(false);
     }
@@ -128,6 +187,9 @@ function Login() {
               onChange={(e) => setEmail(e.target.value)}
               margin="normal"
               required
+              disabled={loading}
+              error={!!formErrors.email}
+              helperText={formErrors.email}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: '8px'
@@ -137,11 +199,26 @@ function Login() {
             <TextField
               fullWidth
               label="Password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               margin="normal"
               required
+              disabled={loading}
+              error={!!formErrors.password}
+              helperText={formErrors.password}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: '8px'
@@ -152,6 +229,7 @@ function Login() {
               fullWidth
               type="submit"
               variant="contained"
+              disabled={loading}
               sx={{
                 mt: 3,
                 py: 1.5,
@@ -163,9 +241,8 @@ function Login() {
                   ? 'linear-gradient(45deg, #2196f3 30%, #1976d2 90%)'
                   : 'linear-gradient(45deg, #2196f3 30%, #1976d2 90%)'
               }}
-              disabled={loading}
             >
-              {loading ? 'Loading...' : 'Login'}
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Login'}
             </Button>
           </form>
         </TabPanel>
@@ -180,6 +257,9 @@ function Login() {
               onChange={(e) => setEmail(e.target.value)}
               margin="normal"
               required
+              disabled={loading}
+              error={!!formErrors.email}
+              helperText={formErrors.email}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: '8px'
@@ -189,11 +269,55 @@ function Login() {
             <TextField
               fullWidth
               label="Password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               margin="normal"
               required
+              disabled={loading}
+              error={!!formErrors.password}
+              helperText={formErrors.password}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '8px'
+                }
+              }}
+            />
+            <TextField
+              fullWidth
+              label="Confirm Password"
+              type={showConfirmPassword ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              margin="normal"
+              required
+              disabled={loading}
+              error={!!formErrors.confirmPassword}
+              helperText={formErrors.confirmPassword}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      edge="end"
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: '8px'
@@ -204,6 +328,7 @@ function Login() {
               fullWidth
               type="submit"
               variant="contained"
+              disabled={loading}
               sx={{
                 mt: 3,
                 py: 1.5,
@@ -215,9 +340,8 @@ function Login() {
                   ? 'linear-gradient(45deg, #2196f3 30%, #1976d2 90%)'
                   : 'linear-gradient(45deg, #2196f3 30%, #1976d2 90%)'
               }}
-              disabled={loading}
             >
-              {loading ? 'Loading...' : 'Register'}
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Register'}
             </Button>
           </form>
         </TabPanel>

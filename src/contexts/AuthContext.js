@@ -6,47 +6,61 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     // Check for existing user in local storage
-    const storedUser = ipcRenderer.sendSync('get-user');
-    if (storedUser) {
-      setUser(storedUser);
-    }
-    setLoading(false);
+    const checkUser = async () => {
+      try {
+        const storedUser = await ipcRenderer.invoke('get-user');
+        if (storedUser) {
+          setUser(storedUser);
+        }
+      } catch (err) {
+        console.error('Error checking user:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkUser();
   }, []);
 
   const login = async (email, password) => {
-    // In a real app, you would validate credentials here
-    // For demo purposes, we'll just create a simple user object
-    const userData = {
-      id: '1',
-      email,
-      name: email.split('@')[0]
-    };
-    
-    ipcRenderer.send('save-user', userData);
-    setUser(userData);
-    return userData;
+    try {
+      setError(null);
+      const userData = await ipcRenderer.invoke('login', { email, password });
+      await ipcRenderer.invoke('set-current-user', userData);
+      setUser(userData);
+      return userData;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
   };
 
   const register = async (email, password) => {
-    // In a real app, you would create a new user account here
-    // For demo purposes, we'll just create a simple user object
-    const userData = {
-      id: '1',
-      email,
-      name: email.split('@')[0]
-    };
-    
-    ipcRenderer.send('save-user', userData);
-    setUser(userData);
-    return userData;
+    try {
+      setError(null);
+      const userData = await ipcRenderer.invoke('register', { email, password });
+      await ipcRenderer.invoke('set-current-user', userData);
+      setUser(userData);
+      return userData;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
   };
 
   const logout = async () => {
-    ipcRenderer.send('clear-user');
-    setUser(null);
+    try {
+      setError(null);
+      await ipcRenderer.invoke('logout');
+      setUser(null);
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
   };
 
   const value = {
@@ -54,7 +68,8 @@ export function AuthProvider({ children }) {
     login,
     register,
     logout,
-    loading
+    loading,
+    error
   };
 
   return (

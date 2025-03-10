@@ -1,84 +1,56 @@
-# Noteey - Modern Note Manager
+# Noteey
 
-Noteey is a modern desktop note-taking application built with Electron and React. It offers a wide range of features to efficiently organize and manage your notes.
+Noteey è un'applicazione moderna per la gestione delle note personali, costruita con Electron e React.
 
-## Key Features
+## Caratteristiche
 
-- 🎨 Modern interface with light/dark theme
-- 📝 Rich text editor with formatting
-- 🏷️ Tag system for note organization
-- 📎 File attachment support
-- 🔍 Advanced search functionality
-- 💾 Automatic saving
-- 📱 Responsive design
+- 🎨 Interfaccia moderna e reattiva
+- 🌓 Supporto per tema chiaro e scuro
+- 🔒 Autenticazione locale sicura
+- 📝 Editor di note ricco di funzionalità
+- 🏷️ Sistema di tag per organizzare le note
+- 💾 Salvataggio automatico
+- 🔄 Sincronizzazione in tempo reale
 
-## System Requirements
+## Requisiti di Sistema
 
-- Node.js 14.x or higher
-- npm 6.x or higher
-- Operating System: Windows, macOS, or Linux
+- Windows 10 o superiore
+- macOS 10.13 o superiore
+- Linux (Ubuntu 18.04 o superiore)
 
-## Installation
+## Installazione
 
-1. Clone the repository:
+1. Scarica l'ultima versione dal [releases page](https://github.com/yourusername/noteey/releases)
+2. Esegui il file di installazione
+3. Segui le istruzioni dell'installer
+
+## Sviluppo
+
+Per eseguire l'applicazione in modalità sviluppo:
+
 ```bash
-git clone https://github.com/giovannicarlino04/noteey.git
-cd noteey
-```
-
-2. Install dependencies:
-```bash
+# Installa le dipendenze
 npm install
-```
 
-3. Start the application in development mode:
-```bash
+# Avvia l'applicazione in modalità sviluppo
 npm start
-```
 
-## Building for Distribution
-
-To create an executable package:
-
-```bash
+# Crea una build di produzione
 npm run build
 ```
 
-The executable files will be created in the `dist` folder.
-
-## Project Structure
-
-```
-noteey/
-├── src/
-│   ├── components/     # React components
-│   ├── contexts/       # Context API
-│   ├── services/       # Services (local storage, etc.)
-│   ├── styles/         # CSS files
-│   ├── utils/          # Utility functions
-│   ├── App.js          # Main component
-│   └── index.js        # Entry point
-├── main.js             # Main Electron process
-├── package.json        # Dependencies and scripts
-└── webpack.config.js   # Webpack configuration
-```
-
-## Technologies Used
+## Tecnologie Utilizzate
 
 - Electron
 - React
 - Material-UI
+- electron-store
 - Webpack
-- electron-store (for local storage)
 
-## Contributing
+## Licenza
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+MIT
 
-## License
+## Autore
 
-[MIT](https://choosealicense.com/licenses/mit/)
-
-## Support
-
-If you encounter any issues or have questions, please open an issue in the GitHub repository. 
+Your Name 
